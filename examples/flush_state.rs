@@ -28,10 +28,7 @@ async fn main() -> Result<(), ()> {
     Ok(())
 }
 
-async fn flush_state(
-    handle: Handle,
-    ca: &StateFlushCliArgs,
-) -> Result<(), Error> {
+async fn flush_state(handle: Handle, ca: &StateFlushCliArgs) -> Result<(), Error> {
     let mut req = handle.state().flush();
 
     if let Some(proto) = ca.protocol {

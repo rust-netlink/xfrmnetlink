@@ -26,8 +26,7 @@ impl PolicyGetDefaultRequest {
             message,
         } = self;
 
-        let mut req =
-            NetlinkMessage::from(XfrmMessage::GetPolicyDefault(message));
+        let mut req = NetlinkMessage::from(XfrmMessage::GetPolicyDefault(message));
 
         req.header.flags = NLM_F_REQUEST | NLM_F_ACK;
 
@@ -53,12 +52,7 @@ pub struct PolicySetDefaultRequest {
 }
 
 impl PolicySetDefaultRequest {
-    pub(crate) fn new(
-        handle: Handle,
-        in_act: u8,
-        fwd_act: u8,
-        out_act: u8,
-    ) -> Self {
+    pub(crate) fn new(handle: Handle, in_act: u8, fwd_act: u8, out_act: u8) -> Self {
         let mut message = DefaultMessage::default();
 
         message.user_policy.input = in_act;
@@ -75,8 +69,7 @@ impl PolicySetDefaultRequest {
             message,
         } = self;
 
-        let mut req =
-            NetlinkMessage::from(XfrmMessage::SetPolicyDefault(message));
+        let mut req = NetlinkMessage::from(XfrmMessage::SetPolicyDefault(message));
         req.header.flags = NLM_F_REQUEST | NLM_F_ACK;
 
         let mut response = handle.request(req)?;
@@ -94,8 +87,7 @@ impl PolicySetDefaultRequest {
             message,
         } = self;
 
-        let mut req =
-            NetlinkMessage::from(XfrmMessage::SetPolicyDefault(message));
+        let mut req = NetlinkMessage::from(XfrmMessage::SetPolicyDefault(message));
         req.header.flags = NLM_F_REQUEST;
 
         let mut _response = handle.request(req)?;

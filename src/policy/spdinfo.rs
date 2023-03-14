@@ -69,10 +69,7 @@ impl PolicySetSpdInfoRequest {
         if lbits <= 32 && rbits <= 32 {
             self.message
                 .nlas
-                .push(SpdInfoAttrs::SpdIpv4HThresh(SpdHThresh {
-                    lbits,
-                    rbits,
-                }));
+                .push(SpdInfoAttrs::SpdIpv4HThresh(SpdHThresh { lbits, rbits }));
         }
         self
     }
@@ -81,10 +78,7 @@ impl PolicySetSpdInfoRequest {
         if lbits <= 128 && rbits <= 128 {
             self.message
                 .nlas
-                .push(SpdInfoAttrs::SpdIpv6HThresh(SpdHThresh {
-                    lbits,
-                    rbits,
-                }));
+                .push(SpdInfoAttrs::SpdIpv6HThresh(SpdHThresh { lbits, rbits }));
         }
         self
     }
