@@ -10,8 +10,7 @@ use xfrmnetlink::new_connection;
 #[tokio::main]
 async fn main() -> Result<(), String> {
     // Open the netlink socket
-    let (mut connection, _, mut messages) =
-        new_connection().map_err(|e| format!("{}", e))?;
+    let (mut connection, _, mut messages) = new_connection().map_err(|e| format!("{}", e))?;
 
     // Can specify various XFRMNLGRP_* flags to specify specific messages to listen for.
     let xfrmgrp_flags: u32 = u32::MAX;

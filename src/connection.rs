@@ -29,7 +29,6 @@ pub fn new_connection_with_socket<S>() -> io::Result<(
 where
     S: AsyncSocket,
 {
-    let (conn, handle, messages) =
-        netlink_proto::new_connection_with_socket(NETLINK_XFRM)?;
+    let (conn, handle, messages) = netlink_proto::new_connection_with_socket(NETLINK_XFRM)?;
     Ok((conn, Handle::new(handle), messages))
 }
