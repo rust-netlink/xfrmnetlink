@@ -7,10 +7,9 @@ use std::net::IpAddr;
 use crate::{try_nl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    constants::*, state::ModifyMessage, Address, Alg, AlgAead, AlgAuth,
-    EncapTmpl, Mark, Replay, ReplayEsn, SecurityCtx, UserOffloadDev, XfrmAttrs,
-    XfrmMessage, XFRM_ALG_AEAD_NAME_LEN, XFRM_ALG_AUTH_NAME_LEN,
-    XFRM_ALG_NAME_LEN,
+    constants::*, state::ModifyMessage, Address, Alg, AlgAead, AlgAuth, EncapTmpl, Mark, Replay,
+    ReplayEsn, SecurityCtx, UserOffloadDev, XfrmAttrs, XfrmMessage, XFRM_ALG_AEAD_NAME_LEN,
+    XFRM_ALG_AUTH_NAME_LEN, XFRM_ALG_NAME_LEN,
 };
 
 /// A request to add or update xfrm state. This is equivalent to the `ip xfrm state add|update` commands.
@@ -22,38 +21,11 @@ pub struct StateModifyRequest {
 }
 
 impl StateModifyRequest {
-    pub(crate) fn new(
-        handle: Handle,
-        update: bool,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> Self {
+    pub(crate) fn new(handle: Handle, update: bool, src_addr: IpAddr, dst_addr: IpAddr) -> Self {
         let mut message = ModifyMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_sa_info.saddr = Address::from_ipv4(&ipv4);
-                message.user_sa_info.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_sa_info.saddr = Address::from_ipv6(&ipv6);
-                message.user_sa_info.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_sa_info.id.daddr = Address::from_ipv4(&ipv4);
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_sa_info.id.daddr = Address::from_ipv6(&ipv6);
-            }
-        }
-
-        message.user_sa_info.id.proto = protocol;
-        message.user_sa_info.id.spi = spi;
+        message.user_sa_info.source(&src_addr);
+        message.user_sa_info.destination(&dst_addr);
 
         StateModifyRequest {
             handle,
@@ -62,11 +34,16 @@ impl StateModifyRequest {
         }
     }
 
-    pub fn authentication(
-        mut self,
-        alg_name: &str,
-        key: &Vec<u8>,
-    ) -> Result<Self, Error> {
+    pub fn protocol(mut self, protocol: u8) -> Self {
+        self.message.user_sa_info.id.proto = protocol;
+        self
+    }
+    pub fn spi(mut self, spi: u32) -> Self {
+        self.message.user_sa_info.id.spi = spi;
+        self
+    }
+
+    pub fn authentication(mut self, alg_name: &str, key: &Vec<u8>) -> Result<Self, Error> {
         let mut auth_name: [u8; XFRM_ALG_NAME_LEN] = [0; XFRM_ALG_NAME_LEN];
         let mut c_auth_name = CString::new(alg_name)
             .map_err(|_| Error::AlgName(alg_name.to_string()))?
@@ -96,8 +73,7 @@ impl StateModifyRequest {
         key: &Vec<u8>,
         trunc_len: u32,
     ) -> Result<Self, Error> {
-        let mut auth_name: [u8; XFRM_ALG_AUTH_NAME_LEN] =
-            [0; XFRM_ALG_AUTH_NAME_LEN];
+        let mut auth_name: [u8; XFRM_ALG_AUTH_NAME_LEN] = [0; XFRM_ALG_AUTH_NAME_LEN];
         let mut c_auth_name = CString::new(alg_name)
             .map_err(|_| Error::AlgName(alg_name.to_string()))?
             .into_bytes_with_nul();
@@ -143,11 +119,7 @@ impl StateModifyRequest {
         Ok(self)
     }
 
-    pub fn encryption(
-        mut self,
-        alg_name: &str,
-        key: &Vec<u8>,
-    ) -> Result<Self, Error> {
+    pub fn encryption(mut self, alg_name: &str, key: &Vec<u8>) -> Result<Self, Error> {
         let mut enc_name: [u8; XFRM_ALG_NAME_LEN] = [0; XFRM_ALG_NAME_LEN];
         let mut c_enc_name = CString::new(alg_name)
             .map_err(|_| Error::AlgName(alg_name.to_string()))?
@@ -176,8 +148,7 @@ impl StateModifyRequest {
         key: &Vec<u8>,
         icv_len: u32,
     ) -> Result<Self, Error> {
-        let mut enc_name: [u8; XFRM_ALG_AEAD_NAME_LEN] =
-            [0; XFRM_ALG_AEAD_NAME_LEN];
+        let mut enc_name: [u8; XFRM_ALG_AEAD_NAME_LEN] = [0; XFRM_ALG_AEAD_NAME_LEN];
         let mut c_enc_name = CString::new(alg_name)
             .map_err(|_| Error::AlgName(alg_name.to_string()))?
             .into_bytes_with_nul();
@@ -265,8 +236,7 @@ impl StateModifyRequest {
         offload_seq_hi: u32,
     ) -> Self {
         if (size > u32::BITS)
-            || (self.message.user_sa_info.flags & XFRM_STATE_ESN)
-                == XFRM_STATE_ESN
+            || (self.message.user_sa_info.flags & XFRM_STATE_ESN) == XFRM_STATE_ESN
         {
             let bmp_len: u32 = (size + u32::BITS - 1) / u32::BITS;
             let replay_esn = ReplayEsn {
@@ -334,54 +304,14 @@ impl StateModifyRequest {
         dst_addr: IpAddr,
         dst_prefix_len: u8,
     ) -> Self {
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                self.message.user_sa_info.selector.saddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    self.message.user_sa_info.selector.prefixlen_s = 0;
-                } else {
-                    self.message.user_sa_info.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                self.message.user_sa_info.selector.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                self.message.user_sa_info.selector.saddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    self.message.user_sa_info.selector.prefixlen_s = 0;
-                } else {
-                    self.message.user_sa_info.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                self.message.user_sa_info.selector.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                self.message.user_sa_info.selector.daddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    self.message.user_sa_info.selector.prefixlen_d = 0;
-                } else {
-                    self.message.user_sa_info.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                self.message.user_sa_info.selector.daddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    self.message.user_sa_info.selector.prefixlen_d = 0;
-                } else {
-                    self.message.user_sa_info.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-        }
-
+        self.message
+            .user_sa_info
+            .selector
+            .source_prefix(&src_addr, src_prefix_len);
+        self.message
+            .user_sa_info
+            .selector
+            .destination_prefix(&dst_addr, dst_prefix_len);
         self
     }
     pub fn selector_protocol(mut self, proto: u8) -> Self {
@@ -427,21 +357,12 @@ impl StateModifyRequest {
         dst_port: u16,
         outside_addr: IpAddr,
     ) -> Self {
-        let mut encap_tmpl = EncapTmpl {
+        let encap_tmpl = EncapTmpl {
             encap_type,
             encap_sport: src_port,
             encap_dport: dst_port,
-            encap_oa: Address::default(),
+            encap_oa: Address::from_ip(&outside_addr),
         };
-
-        match outside_addr {
-            IpAddr::V4(ipv4) => {
-                encap_tmpl.encap_oa = Address::from_ipv4(&ipv4);
-            }
-            IpAddr::V6(ipv6) => {
-                encap_tmpl.encap_oa = Address::from_ipv6(&ipv6);
-            }
-        }
 
         self.message
             .nlas
@@ -451,18 +372,9 @@ impl StateModifyRequest {
 
     // only used for routing protocols (xfrm proto route2 & hao)
     pub fn care_of_address(mut self, co_addr: IpAddr) -> Self {
-        match co_addr {
-            IpAddr::V4(ipv4) => {
-                self.message
-                    .nlas
-                    .push(XfrmAttrs::CareOfAddr(Address::from_ipv4(&ipv4)));
-            }
-            IpAddr::V6(ipv6) => {
-                self.message
-                    .nlas
-                    .push(XfrmAttrs::CareOfAddr(Address::from_ipv6(&ipv6)));
-            }
-        }
+        self.message
+            .nlas
+            .push(XfrmAttrs::CareOfAddr(Address::from_ip(&co_addr)));
         self
     }
 

@@ -7,6 +7,7 @@ use netlink_packet_xfrm::XfrmMessage;
 
 #[derive(Clone, Eq, PartialEq, Debug, Error)]
 #[non_exhaustive]
+#[allow(clippy::large_enum_variant)]
 pub enum Error {
     #[error("Received an unexpected message {0:?}")]
     UnexpectedMessage(NetlinkMessage<XfrmMessage>),

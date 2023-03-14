@@ -6,8 +6,7 @@ use std::net::IpAddr;
 use crate::{try_nl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    constants::*, policy::DelGetMessage, Address, Mark, SecurityCtx,
-    UserPolicyType, XfrmAttrs, XfrmMessage,
+    policy::DelGetMessage, Mark, SecurityCtx, UserPolicyType, XfrmAttrs, XfrmMessage,
 };
 
 /// A request to delete xfrm policies. This is equivalent to the `ip xfrm policy delete` command.
@@ -24,68 +23,25 @@ impl PolicyDeleteRequest {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
     ) -> Self {
         let mut message = DelGetMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_policy_id.selector.saddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_s = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                message.user_policy_id.selector.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_policy_id.selector.saddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_s = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                message.user_policy_id.selector.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_policy_id.selector.daddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_d = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_policy_id.selector.daddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_d = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-        }
-
-        message.user_policy_id.direction = direction;
+        message
+            .user_policy_id
+            .selector
+            .source_prefix(&src_addr, src_prefix_len);
+        message
+            .user_policy_id
+            .selector
+            .destination_prefix(&dst_addr, dst_prefix_len);
 
         PolicyDeleteRequest { handle, message }
     }
 
-    pub(crate) fn new_index(handle: Handle, index: u32, direction: u8) -> Self {
+    pub(crate) fn new_index(handle: Handle, index: u32) -> Self {
         let mut message = DelGetMessage::default();
 
         message.user_policy_id.index = index;
-        message.user_policy_id.direction = direction;
 
         PolicyDeleteRequest { handle, message }
     }

@@ -10,7 +10,6 @@ use std::net::IpAddr;
 use crate::{try_xfrmnl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    constants::*,
     state::{DelGetMessage, GetDumpMessage, ModifyMessage},
     Address, AddressFilter, Mark, XfrmAttrs, XfrmMessage,
 };
@@ -23,45 +22,25 @@ pub struct StateGetRequest {
 }
 
 impl StateGetRequest {
-    pub(crate) fn new(
-        handle: Handle,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> Self {
+    pub(crate) fn new(handle: Handle, src_addr: IpAddr, dst_addr: IpAddr) -> Self {
         let mut message = DelGetMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message
-                    .nlas
-                    .push(XfrmAttrs::SrcAddr(Address::from_ipv4(&ipv4)));
-                message.user_sa_id.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message
-                    .nlas
-                    .push(XfrmAttrs::SrcAddr(Address::from_ipv6(&ipv6)));
-                message.user_sa_id.family = AF_INET6;
-            }
-        }
+        message
+            .nlas
+            .push(XfrmAttrs::SrcAddr(Address::from_ip(&src_addr)));
 
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_sa_id.daddr = Address::from_ipv4(&ipv4);
-                message.user_sa_id.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_sa_id.daddr = Address::from_ipv6(&ipv6);
-                message.user_sa_id.family = AF_INET6;
-            }
-        }
-
-        message.user_sa_id.proto = protocol;
-        message.user_sa_id.spi = spi;
+        message.user_sa_id.destination(&dst_addr);
 
         StateGetRequest { handle, message }
+    }
+
+    pub fn protocol(mut self, protocol: u8) -> Self {
+        self.message.user_sa_id.proto = protocol;
+        self
+    }
+    pub fn spi(mut self, spi: u32) -> Self {
+        self.message.user_sa_id.spi = spi;
+        self
     }
 
     // Delete and Get won't work to find/retrieve the state in the kernel
@@ -87,13 +66,10 @@ impl StateGetRequest {
 
         // A successful policy Get request returns with an Add/ModifyMessage response.
         match handle.request(req) {
-            Ok(response) => Either::Left(
-                response
-                    .map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddSa))),
-            ),
-            Err(e) => Either::Right(
-                future::err::<ModifyMessage, Error>(e).into_stream(),
-            ),
+            Ok(response) => {
+                Either::Left(response.map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddSa))))
+            }
+            Err(e) => Either::Right(future::err::<ModifyMessage, Error>(e).into_stream()),
         }
     }
 
@@ -126,33 +102,8 @@ impl StateGetDumpRequest {
     ) -> Self {
         let mut addr_filter = AddressFilter::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                addr_filter.saddr = Address::from_ipv4(&ipv4);
-                addr_filter.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                addr_filter.saddr = Address::from_ipv6(&ipv6);
-                addr_filter.family = AF_INET6;
-            }
-        }
-        addr_filter.splen = src_prefix_len;
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                addr_filter.daddr = Address::from_ipv4(&ipv4);
-                if addr_filter.family == 0 {
-                    addr_filter.family = AF_INET;
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                addr_filter.daddr = Address::from_ipv6(&ipv6);
-                if addr_filter.family == 0 {
-                    addr_filter.family = AF_INET6;
-                }
-            }
-        }
-        addr_filter.dplen = dst_prefix_len;
+        addr_filter.source_prefix(&src_addr, src_prefix_len);
+        addr_filter.destination_prefix(&dst_addr, dst_prefix_len);
 
         self.message
             .nlas
@@ -172,13 +123,10 @@ impl StateGetDumpRequest {
 
         // A successful state Get with dump flag request returns with an Add/ModifyMessage response.
         match handle.request(req) {
-            Ok(response) => Either::Left(
-                response
-                    .map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddSa))),
-            ),
-            Err(e) => Either::Right(
-                future::err::<ModifyMessage, Error>(e).into_stream(),
-            ),
+            Ok(response) => {
+                Either::Left(response.map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddSa))))
+            }
+            Err(e) => Either::Right(future::err::<ModifyMessage, Error>(e).into_stream()),
         }
     }
 

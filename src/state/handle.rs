@@ -3,9 +3,8 @@
 use std::net::IpAddr;
 
 use super::{
-    StateAllocSpiRequest, StateDeleteRequest, StateFlushRequest,
-    StateGetDumpRequest, StateGetRequest, StateGetSadInfoRequest,
-    StateModifyRequest,
+    StateAllocSpiRequest, StateDeleteRequest, StateFlushRequest, StateGetDumpRequest,
+    StateGetRequest, StateGetSadInfoRequest, StateModifyRequest,
 };
 use crate::Handle;
 
@@ -18,48 +17,18 @@ impl StateHandle {
     }
 
     /// Add xfrm state (equivalent to `ip xfrm state add`)
-    pub fn add(
-        &self,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> StateModifyRequest {
-        StateModifyRequest::new(
-            self.0.clone(),
-            false,
-            src_addr,
-            dst_addr,
-            protocol,
-            spi,
-        )
+    pub fn add(&self, src_addr: IpAddr, dst_addr: IpAddr) -> StateModifyRequest {
+        StateModifyRequest::new(self.0.clone(), false, src_addr, dst_addr)
     }
 
     /// Ask kernel to reserve a SPI for xfrm state (equivalent to `ip xfrm state allocspi`)
-    pub fn alloc_spi(
-        &self,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-    ) -> StateAllocSpiRequest {
-        StateAllocSpiRequest::new(self.0.clone(), src_addr, dst_addr, protocol)
+    pub fn alloc_spi(&self, src_addr: IpAddr, dst_addr: IpAddr) -> StateAllocSpiRequest {
+        StateAllocSpiRequest::new(self.0.clone(), src_addr, dst_addr)
     }
 
     /// Delete xfrm state (equivalent to `ip xfrm state delete`)
-    pub fn delete(
-        &self,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> StateDeleteRequest {
-        StateDeleteRequest::new(
-            self.0.clone(),
-            src_addr,
-            dst_addr,
-            protocol,
-            spi,
-        )
+    pub fn delete(&self, src_addr: IpAddr, dst_addr: IpAddr) -> StateDeleteRequest {
+        StateDeleteRequest::new(self.0.clone(), src_addr, dst_addr)
     }
 
     /// Flush xfrm state (equivalent to `ip xfrm state flush`)
@@ -68,14 +37,8 @@ impl StateHandle {
     }
 
     /// Get xfrm state (equivalent to `ip xfrm state get`)
-    pub fn get(
-        &self,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> StateGetRequest {
-        StateGetRequest::new(self.0.clone(), src_addr, dst_addr, protocol, spi)
+    pub fn get(&self, src_addr: IpAddr, dst_addr: IpAddr) -> StateGetRequest {
+        StateGetRequest::new(self.0.clone(), src_addr, dst_addr)
     }
 
     /// Get (dump) all xfrm states (equivalent to `ip xfrm state list`)
@@ -89,20 +52,7 @@ impl StateHandle {
     }
 
     /// Update xfrm state (equivalent to `ip xfrm state update`)
-    pub fn update(
-        &self,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> StateModifyRequest {
-        StateModifyRequest::new(
-            self.0.clone(),
-            true,
-            src_addr,
-            dst_addr,
-            protocol,
-            spi,
-        )
+    pub fn update(&self, src_addr: IpAddr, dst_addr: IpAddr) -> StateModifyRequest {
+        StateModifyRequest::new(self.0.clone(), true, src_addr, dst_addr)
     }
 }

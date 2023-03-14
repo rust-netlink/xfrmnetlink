@@ -41,16 +41,12 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn get_state(
-    handle: Handle,
-    ca: &StateDelGetCliArgs,
-) -> Result<(), Error> {
-    let mut req = handle.state().get(
-        ca.src_addr.addr(),
-        ca.dst_addr.addr(),
-        ca.xfrm_proto,
-        ca.spi,
-    );
+async fn get_state(handle: Handle, ca: &StateDelGetCliArgs) -> Result<(), Error> {
+    let mut req = handle
+        .state()
+        .get(ca.src_addr.addr(), ca.dst_addr.addr())
+        .protocol(ca.xfrm_proto)
+        .spi(ca.spi);
 
     if let Some((mark, mask)) = ca.mark_and_mask {
         req = req.mark(mark, mask);
@@ -70,16 +66,12 @@ async fn get_state(
     Ok(())
 }
 
-async fn del_state(
-    handle: Handle,
-    ca: &StateDelGetCliArgs,
-) -> Result<(), Error> {
-    let mut req = handle.state().delete(
-        ca.src_addr.addr(),
-        ca.dst_addr.addr(),
-        ca.xfrm_proto,
-        ca.spi,
-    );
+async fn del_state(handle: Handle, ca: &StateDelGetCliArgs) -> Result<(), Error> {
+    let mut req = handle
+        .state()
+        .delete(ca.src_addr.addr(), ca.dst_addr.addr())
+        .protocol(ca.xfrm_proto)
+        .spi(ca.spi);
 
     if let Some((mark, mask)) = ca.mark_and_mask {
         req = req.mark(mark, mask);

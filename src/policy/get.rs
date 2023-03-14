@@ -11,9 +11,8 @@ use std::net::IpAddr;
 use crate::{try_xfrmnl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_DUMP, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    constants::*,
     policy::{DelGetMessage, ModifyMessage},
-    Address, Mark, SecurityCtx, UserPolicyType, XfrmAttrs, XfrmMessage,
+    Mark, SecurityCtx, UserPolicyType, XfrmAttrs, XfrmMessage,
 };
 
 /// A request to get xfrm policies. This is equivalent to the `ip xfrm policy get` command.
@@ -31,59 +30,17 @@ impl PolicyGetRequest {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
     ) -> Self {
         let mut message = DelGetMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_policy_id.selector.saddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_s = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                message.user_policy_id.selector.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_policy_id.selector.saddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_s = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                message.user_policy_id.selector.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_policy_id.selector.daddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_d = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_policy_id.selector.daddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    message.user_policy_id.selector.prefixlen_d = 0;
-                } else {
-                    message.user_policy_id.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-        }
-
-        message.user_policy_id.direction = direction;
+        message
+            .user_policy_id
+            .selector
+            .source_prefix(&src_addr, src_prefix_len);
+        message
+            .user_policy_id
+            .selector
+            .destination_prefix(&dst_addr, dst_prefix_len);
 
         PolicyGetRequest {
             handle,
@@ -92,11 +49,10 @@ impl PolicyGetRequest {
         }
     }
 
-    pub(crate) fn new_index(handle: Handle, index: u32, direction: u8) -> Self {
+    pub(crate) fn new_index(handle: Handle, index: u32) -> Self {
         let mut message = DelGetMessage::default();
 
         message.user_policy_id.index = index;
-        message.user_policy_id.direction = direction;
 
         PolicyGetRequest {
             handle,
@@ -215,13 +171,9 @@ impl PolicyGetRequest {
         // A successful policy Get request returns with an Add/ModifyMessage response.
         match handle.request(req) {
             Ok(response) => {
-                Either::Left(response.map(move |msg| {
-                    Ok(try_xfrmnl!(msg, XfrmMessage::AddPolicy))
-                }))
+                Either::Left(response.map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddPolicy))))
             }
-            Err(e) => Either::Right(
-                future::err::<ModifyMessage, Error>(e).into_stream(),
-            ),
+            Err(e) => Either::Right(future::err::<ModifyMessage, Error>(e).into_stream()),
         }
     }
 
