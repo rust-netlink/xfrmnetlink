@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 
+use netlink_packet_xfrm::UserTemplate;
 use std::env;
 use xfrmnetlink::{new_connection, Error, Handle};
 
@@ -34,28 +35,29 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn add_upd_policy(
-    handle: Handle,
-    ca: &PolicyAddUpdCliArgs,
-) -> Result<(), Error> {
+async fn add_upd_policy(handle: Handle, ca: &PolicyAddUpdCliArgs) -> Result<(), Error> {
     let mut req = if ca.update {
-        handle.policy().update(
-            ca.src_addr.addr(),
-            ca.src_addr.prefix_len(),
-            ca.dst_addr.addr(),
-            ca.dst_addr.prefix_len(),
-            ca.direction,
-            ca.action,
-        )
+        handle
+            .policy()
+            .update(
+                ca.src_addr.addr(),
+                ca.src_addr.prefix_len(),
+                ca.dst_addr.addr(),
+                ca.dst_addr.prefix_len(),
+            )
+            .direction(ca.direction)
+            .action(ca.action)
     } else {
-        handle.policy().add(
-            ca.src_addr.addr(),
-            ca.src_addr.prefix_len(),
-            ca.dst_addr.addr(),
-            ca.dst_addr.prefix_len(),
-            ca.direction,
-            ca.action,
-        )
+        handle
+            .policy()
+            .add(
+                ca.src_addr.addr(),
+                ca.src_addr.prefix_len(),
+                ca.dst_addr.addr(),
+                ca.dst_addr.prefix_len(),
+            )
+            .direction(ca.direction)
+            .action(ca.action)
     };
 
     if let Some(pt) = ca.ptype {
@@ -117,15 +119,16 @@ async fn add_upd_policy(
 
     let mut tmpls = ca.templates.iter();
     while let Some(tmpl) = tmpls.next() {
-        req = req.add_template(
-            tmpl.src_addr.addr(),
-            tmpl.dst_addr.addr(),
-            tmpl.proto,
-            tmpl.mode,
-            tmpl.spi,
-            tmpl.optional,
-            tmpl.reqid,
-        );
+        let mut ut = UserTemplate::default();
+        ut.source(&tmpl.src_addr.addr());
+        ut.destination(&tmpl.dst_addr.addr());
+        ut.protocol(tmpl.proto);
+        ut.mode(tmpl.mode);
+        ut.spi(tmpl.spi);
+        ut.optional(tmpl.optional);
+        ut.reqid(tmpl.reqid);
+
+        req = req.add_template(ut);
     }
 
     req.execute().await?;

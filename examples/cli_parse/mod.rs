@@ -86,15 +86,15 @@ fn parse_ipnet_arg(ip: &String) -> Result<IpNet, CliError> {
         ipnet_addr = ip_addr_net;
     } else if let Ok(ip_addr) = IpAddr::from_str(ip) {
         let prefix = if ip_addr.is_ipv4() { 32 } else { 128 };
-        ipnet_addr = IpNet::new(ip_addr, prefix)
-            .map_err(|_| CliError::InvalidIp(ip.to_string()))?;
+        ipnet_addr =
+            IpNet::new(ip_addr, prefix).map_err(|_| CliError::InvalidIp(ip.to_string()))?;
     } else if let Some(_slash) = ip.find('/') {
         let v: Vec<&str> = ip.split('/').collect();
         if v.len() == 2 {
-            let network = IpAddr::from_str(v[0])
-                .map_err(|_| CliError::InvalidIp(v[0].to_string()))?;
-            let netmask = IpAddr::from_str(v[1])
-                .map_err(|_| CliError::InvalidIp(v[1].to_string()))?;
+            let network =
+                IpAddr::from_str(v[0]).map_err(|_| CliError::InvalidIp(v[0].to_string()))?;
+            let netmask =
+                IpAddr::from_str(v[1]).map_err(|_| CliError::InvalidIp(v[1].to_string()))?;
             let mut prefix_len: Option<u32> = None;
 
             // If the netmask is valid, the number of leading ones
@@ -114,22 +114,13 @@ fn parse_ipnet_arg(ip: &String) -> Result<IpNet, CliError> {
                 }
             }
             if prefix_len.is_none() {
-                return Err(CliError::InvalidAddress(
-                    v[0].to_string(),
-                    v[1].to_string(),
-                ));
+                return Err(CliError::InvalidAddress(v[0].to_string(), v[1].to_string()));
             }
 
-            if (network.is_ipv4() && netmask.is_ipv4())
-                || (network.is_ipv6() && netmask.is_ipv6())
+            if (network.is_ipv4() && netmask.is_ipv4()) || (network.is_ipv6() && netmask.is_ipv6())
             {
                 ipnet_addr = IpNet::new(network, prefix_len.unwrap() as u8)
-                    .map_err(|_| {
-                        CliError::InvalidAddress(
-                            v[0].to_string(),
-                            v[1].to_string(),
-                        )
-                    })?;
+                    .map_err(|_| CliError::InvalidAddress(v[0].to_string(), v[1].to_string()))?;
             } else {
                 return Err(CliError::MismatchedAddressFamily(
                     v[0].to_string(),
@@ -186,8 +177,7 @@ fn parse_proto_arg<'a>(
         }
 
         match proto_num {
-            Some(IPPROTO_TCP) | Some(IPPROTO_UDP) | Some(IPPROTO_SCTP)
-            | Some(IPPROTO_DCCP) => {
+            Some(IPPROTO_TCP) | Some(IPPROTO_UDP) | Some(IPPROTO_SCTP) | Some(IPPROTO_DCCP) => {
                 // parse ports (16-bit values)
                 while let Some((_p, port)) = it.peek() {
                     match port.as_str() {
@@ -246,9 +236,7 @@ fn parse_proto_arg<'a>(
                             if let Some((_p, ks)) = it.next() {
                                 if let Ok(key_32) = ks.parse::<u32>() {
                                     gre_key = Some(key_32);
-                                } else if let Ok(ip_addr) =
-                                    Ipv4Addr::from_str(ks)
-                                {
+                                } else if let Ok(ip_addr) = Ipv4Addr::from_str(ks) {
                                     gre_key = Some(ip_addr.into());
                                 }
                             }
@@ -278,8 +266,9 @@ fn parse_hex_data(hex_str: &str) -> Result<Vec<u8>, CliError> {
     if hex_str.len() > 2 && hex_str.starts_with("0x") {
         pos = 2;
     }
-    return Ok(hex::decode(&hex_str[pos..])
-        .map_err(|_| CliError::InvalidHexArg(hex_str.to_string()))?);
+    return Ok(
+        hex::decode(&hex_str[pos..]).map_err(|_| CliError::InvalidHexArg(hex_str.to_string()))?
+    );
 }
 
 #[allow(dead_code)]
@@ -392,10 +381,8 @@ pub(crate) fn policy_add_upd_parse_args(
                                 "mask" => {
                                     it.next();
                                     if let Some((_p, mask)) = it.next() {
-                                        if let Ok(mask_32) = mask.parse::<u32>()
-                                        {
-                                            mark_and_mask =
-                                                Some((mark_32, mask_32));
+                                        if let Ok(mask_32) = mask.parse::<u32>() {
+                                            mark_and_mask = Some((mark_32, mask_32));
                                         }
                                     }
                                 }
@@ -440,9 +427,7 @@ pub(crate) fn policy_add_upd_parse_args(
                         }
                         _ => {
                             if fl.len() > 2 && fl.starts_with("0x") {
-                                if let Ok(flag) =
-                                    u8::from_str_radix(&fl.as_str()[2..], 16)
-                                {
+                                if let Ok(flag) = u8::from_str_radix(&fl.as_str()[2..], 16) {
                                     // Explicitly setting a hex flag overwrites any existing
                                     // value, but any subsequent "flag" args with known flags
                                     // "localok", "icmp", will be OR'd with this value.
@@ -585,13 +570,9 @@ pub(crate) fn policy_add_upd_parse_args(
                                     "esp" => tmpl_args.proto = IPPROTO_ESP,
                                     "ah" => tmpl_args.proto = IPPROTO_AH,
                                     "comp" => tmpl_args.proto = IPPROTO_COMP,
-                                    "route2" => {
-                                        tmpl_args.proto = IPPROTO_ROUTING
-                                    }
+                                    "route2" => tmpl_args.proto = IPPROTO_ROUTING,
                                     "hao" => tmpl_args.proto = IPPROTO_DSTOPTS,
-                                    "ipsec-any" => {
-                                        tmpl_args.proto = IPSEC_PROTO_ANY
-                                    }
+                                    "ipsec-any" => tmpl_args.proto = IPSEC_PROTO_ANY,
                                     _ => (),
                                 }
                             }
@@ -608,19 +589,10 @@ pub(crate) fn policy_add_upd_parse_args(
                             it.next();
                             if let Some((_p, mode)) = it.next() {
                                 match mode.as_str() {
-                                    "transport" => {
-                                        tmpl_args.mode = XFRM_MODE_TRANSPORT
-                                    }
-                                    "tunnel" => {
-                                        tmpl_args.mode = XFRM_MODE_TUNNEL
-                                    }
-                                    "ro" => {
-                                        tmpl_args.mode =
-                                            XFRM_MODE_ROUTEOPTIMIZATION
-                                    }
-                                    "in_trigger" => {
-                                        tmpl_args.mode = XFRM_MODE_IN_TRIGGER
-                                    }
+                                    "transport" => tmpl_args.mode = XFRM_MODE_TRANSPORT,
+                                    "tunnel" => tmpl_args.mode = XFRM_MODE_TUNNEL,
+                                    "ro" => tmpl_args.mode = XFRM_MODE_ROUTEOPTIMIZATION,
+                                    "in_trigger" => tmpl_args.mode = XFRM_MODE_IN_TRIGGER,
                                     "beet" => tmpl_args.mode = XFRM_MODE_BEET,
                                     _ => (),
                                 }
@@ -797,10 +769,8 @@ pub(crate) fn policy_del_get_parse_args(
                                 "mask" => {
                                     it.next();
                                     if let Some((_p, mask)) = it.next() {
-                                        if let Ok(mask_32) = mask.parse::<u32>()
-                                        {
-                                            mark_and_mask =
-                                                Some((mark_32, mask_32));
+                                        if let Ok(mask_32) = mask.parse::<u32>() {
+                                            mark_and_mask = Some((mark_32, mask_32));
                                         }
                                     }
                                 }
@@ -864,9 +834,7 @@ pub struct PolicyFlushCliArgs {
 }
 
 #[allow(dead_code)]
-pub(crate) fn policy_flush_parse_args(
-    args: &Vec<String>,
-) -> Result<PolicyFlushCliArgs, CliError> {
+pub(crate) fn policy_flush_parse_args(args: &Vec<String>) -> Result<PolicyFlushCliArgs, CliError> {
     let mut ptype: Option<u8> = None;
 
     let mut it = args.iter().enumerate().peekable();
@@ -900,9 +868,7 @@ pub struct PolicySpdCliArgs {
 }
 
 #[allow(dead_code)]
-pub(crate) fn policy_spd_parse_args(
-    args: &Vec<String>,
-) -> Result<PolicySpdCliArgs, CliError> {
+pub(crate) fn policy_spd_parse_args(args: &Vec<String>) -> Result<PolicySpdCliArgs, CliError> {
     let mut hthresh4: Option<(u8, u8)> = None;
     let mut hthresh6: Option<(u8, u8)> = None;
 
@@ -993,9 +959,7 @@ pub(crate) fn policy_action_parse_args(
             "in" => {
                 if let Some((_p, act)) = it.next() {
                     match act.as_str() {
-                        "allow" | "accept" => {
-                            in_action = Some(XFRM_USERPOLICY_ACCEPT)
-                        }
+                        "allow" | "accept" => in_action = Some(XFRM_USERPOLICY_ACCEPT),
                         "block" => in_action = Some(XFRM_USERPOLICY_BLOCK),
                         _ => (),
                     }
@@ -1004,9 +968,7 @@ pub(crate) fn policy_action_parse_args(
             "fwd" => {
                 if let Some((_p, act)) = it.next() {
                     match act.as_str() {
-                        "allow" | "accept" => {
-                            fwd_action = Some(XFRM_USERPOLICY_ACCEPT)
-                        }
+                        "allow" | "accept" => fwd_action = Some(XFRM_USERPOLICY_ACCEPT),
                         "block" => fwd_action = Some(XFRM_USERPOLICY_BLOCK),
                         _ => (),
                     }
@@ -1015,9 +977,7 @@ pub(crate) fn policy_action_parse_args(
             "out" => {
                 if let Some((_p, act)) = it.next() {
                     match act.as_str() {
-                        "allow" | "accept" => {
-                            out_action = Some(XFRM_USERPOLICY_ACCEPT)
-                        }
+                        "allow" | "accept" => out_action = Some(XFRM_USERPOLICY_ACCEPT),
                         "block" => out_action = Some(XFRM_USERPOLICY_BLOCK),
                         _ => (),
                     }
@@ -1092,9 +1052,7 @@ pub struct StateAddUpdCliArgs {
 }
 
 #[allow(dead_code)]
-pub(crate) fn state_add_upd_parse_args(
-    args: &Vec<String>,
-) -> Result<StateAddUpdCliArgs, CliError> {
+pub(crate) fn state_add_upd_parse_args(args: &Vec<String>) -> Result<StateAddUpdCliArgs, CliError> {
     let mut update: bool = false;
     let mut src_addr: IpNet = IpNet::default();
     let mut dst_addr: IpNet = IpNet::default();
@@ -1262,10 +1220,8 @@ pub(crate) fn state_add_upd_parse_args(
                                 "mask" => {
                                     it.next();
                                     if let Some((_p, mask)) = it.next() {
-                                        if let Ok(mask_32) = mask.parse::<u32>()
-                                        {
-                                            mark_and_mask =
-                                                Some((mark_32, mask_32));
+                                        if let Ok(mask_32) = mask.parse::<u32>() {
+                                            mark_and_mask = Some((mark_32, mask_32));
                                         }
                                     }
                                 }
@@ -1285,10 +1241,8 @@ pub(crate) fn state_add_upd_parse_args(
                                 "mask" => {
                                     it.next();
                                     if let Some((_p, mask)) = it.next() {
-                                        if let Ok(mask_32) = mask.parse::<u32>()
-                                        {
-                                            output_mark_and_mask =
-                                                Some((mark_32, mask_32));
+                                        if let Ok(mask_32) = mask.parse::<u32>() {
+                                            output_mark_and_mask = Some((mark_32, mask_32));
                                         }
                                     }
                                 }
@@ -1421,9 +1375,7 @@ pub(crate) fn state_add_upd_parse_args(
                         }
                         _ => {
                             if fl.len() > 2 && fl.starts_with("0x") {
-                                if let Ok(flag) =
-                                    u8::from_str_radix(&fl.as_str()[2..], 16)
-                                {
+                                if let Ok(flag) = u8::from_str_radix(&fl.as_str()[2..], 16) {
                                     // Explicitly setting a hex flag overwrites any existing
                                     // value, but any subsequent "flag" args with known flags
                                     // will be OR'd with this value.
@@ -1442,27 +1394,22 @@ pub(crate) fn state_add_upd_parse_args(
                         "dont-encap-dscp" => {
                             it.next();
                             if let Some(flag) = extra_flags {
-                                extra_flags =
-                                    Some(flag | XFRM_SA_XFLAG_DONT_ENCAP_DSCP);
+                                extra_flags = Some(flag | XFRM_SA_XFLAG_DONT_ENCAP_DSCP);
                             } else {
-                                extra_flags =
-                                    Some(XFRM_SA_XFLAG_DONT_ENCAP_DSCP);
+                                extra_flags = Some(XFRM_SA_XFLAG_DONT_ENCAP_DSCP);
                             }
                         }
                         "oseq-may-wrap" => {
                             it.next();
                             if let Some(flag) = extra_flags {
-                                extra_flags =
-                                    Some(flag | XFRM_SA_XFLAG_OSEQ_MAY_WRAP);
+                                extra_flags = Some(flag | XFRM_SA_XFLAG_OSEQ_MAY_WRAP);
                             } else {
                                 extra_flags = Some(XFRM_SA_XFLAG_OSEQ_MAY_WRAP);
                             }
                         }
                         _ => {
                             if fl.len() > 2 && fl.starts_with("0x") {
-                                if let Ok(flag) =
-                                    u32::from_str_radix(&fl.as_str()[2..], 16)
-                                {
+                                if let Ok(flag) = u32::from_str_radix(&fl.as_str()[2..], 16) {
                                     // Explicitly setting a hex flag overwrites any existing
                                     // value, but any subsequent "flag" args with known flags
                                     // will be OR'd with this value.
@@ -1616,9 +1563,7 @@ pub(crate) fn state_add_upd_parse_args(
             "encap" => {
                 if let Some((_p, et)) = it.next() {
                     match et.as_str() {
-                        "espinudp-nonike" => {
-                            encap_type = Some(UDP_ENCAP_ESPINUDP_NON_IKE)
-                        }
+                        "espinudp-nonike" => encap_type = Some(UDP_ENCAP_ESPINUDP_NON_IKE),
                         "espinudp" => encap_type = Some(UDP_ENCAP_ESPINUDP),
                         "espintcp" => encap_type = Some(TCP_ENCAP_ESPINTCP),
                         _ => (),
@@ -1660,9 +1605,7 @@ pub(crate) fn state_add_upd_parse_args(
                             it.next();
                             if let Some((_p, dir)) = it.next() {
                                 match dir.as_str() {
-                                    "in" => {
-                                        offload_dir = Some(XFRM_OFFLOAD_INBOUND)
-                                    }
+                                    "in" => offload_dir = Some(XFRM_OFFLOAD_INBOUND),
                                     "out" => offload_dir = Some(0),
                                     _ => break,
                                 }
@@ -1752,9 +1695,7 @@ pub struct StateDelGetCliArgs {
 }
 
 #[allow(dead_code)]
-pub(crate) fn state_del_get_parse_args(
-    args: &Vec<String>,
-) -> Result<StateDelGetCliArgs, CliError> {
+pub(crate) fn state_del_get_parse_args(args: &Vec<String>) -> Result<StateDelGetCliArgs, CliError> {
     let mut delete = true;
     let mut src_addr: IpNet = IpNet::default();
     let mut dst_addr: IpNet = IpNet::default();
@@ -1817,10 +1758,8 @@ pub(crate) fn state_del_get_parse_args(
                                 "mask" => {
                                     it.next();
                                     if let Some((_p, mask)) = it.next() {
-                                        if let Ok(mask_32) = mask.parse::<u32>()
-                                        {
-                                            mark_and_mask =
-                                                Some((mark_32, mask_32));
+                                        if let Ok(mask_32) = mask.parse::<u32>() {
+                                            mark_and_mask = Some((mark_32, mask_32));
                                         }
                                     }
                                 }
@@ -1854,9 +1793,7 @@ pub struct StateDumpCliArgs {
 }
 
 #[allow(dead_code)]
-pub(crate) fn state_dump_parse_args(
-    args: &Vec<String>,
-) -> Result<StateDumpCliArgs, CliError> {
+pub(crate) fn state_dump_parse_args(args: &Vec<String>) -> Result<StateDumpCliArgs, CliError> {
     let mut src_addr: IpNet = IpNet::default();
     let mut dst_addr: IpNet = IpNet::default();
 
@@ -1895,9 +1832,7 @@ pub struct StateFlushCliArgs {
 }
 
 #[allow(dead_code)]
-pub(crate) fn state_flush_parse_args(
-    args: &Vec<String>,
-) -> Result<StateFlushCliArgs, CliError> {
+pub(crate) fn state_flush_parse_args(args: &Vec<String>) -> Result<StateFlushCliArgs, CliError> {
     let mut protocol: Option<u8> = None;
 
     let mut it = args.iter().enumerate().peekable();
@@ -2007,10 +1942,8 @@ pub(crate) fn state_alloc_spi_parse_args(
                                 "mask" => {
                                     it.next();
                                     if let Some((_p, mask)) = it.next() {
-                                        if let Ok(mask_32) = mask.parse::<u32>()
-                                        {
-                                            mark_and_mask =
-                                                Some((mark_32, mask_32));
+                                        if let Ok(mask_32) = mask.parse::<u32>() {
+                                            mark_and_mask = Some((mark_32, mask_32));
                                         }
                                     }
                                 }

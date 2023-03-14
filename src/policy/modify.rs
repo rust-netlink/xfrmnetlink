@@ -6,8 +6,7 @@ use std::net::IpAddr;
 use crate::{try_nl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    constants::*, policy::ModifyMessage, Address, Mark, SecurityCtx,
-    UserPolicyType, UserTemplate, XfrmAttrs, XfrmMessage,
+    policy::ModifyMessage, Mark, SecurityCtx, UserPolicyType, UserTemplate, XfrmAttrs, XfrmMessage,
 };
 
 /// A request to add or update xfrm policies. This is equivalent to the `ip xfrm policy add|update` commands.
@@ -27,61 +26,17 @@ impl PolicyModifyRequest {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
-        action: u8,
     ) -> Self {
         let mut message = ModifyMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_policy_info.selector.saddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    message.user_policy_info.selector.prefixlen_s = 0;
-                } else {
-                    message.user_policy_info.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                message.user_policy_info.selector.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_policy_info.selector.saddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    message.user_policy_info.selector.prefixlen_s = 0;
-                } else {
-                    message.user_policy_info.selector.prefixlen_s =
-                        src_prefix_len;
-                }
-                message.user_policy_info.selector.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_policy_info.selector.daddr =
-                    Address::from_ipv4(&ipv4);
-                if ipv4.is_unspecified() {
-                    message.user_policy_info.selector.prefixlen_d = 0;
-                } else {
-                    message.user_policy_info.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_policy_info.selector.daddr =
-                    Address::from_ipv6(&ipv6);
-                if ipv6.is_unspecified() {
-                    message.user_policy_info.selector.prefixlen_d = 0;
-                } else {
-                    message.user_policy_info.selector.prefixlen_d =
-                        dst_prefix_len;
-                }
-            }
-        }
-
-        message.user_policy_info.direction = direction;
-        message.user_policy_info.action = action;
+        message
+            .user_policy_info
+            .selector
+            .source_prefix(&src_addr, src_prefix_len);
+        message
+            .user_policy_info
+            .selector
+            .destination_prefix(&dst_addr, dst_prefix_len);
 
         PolicyModifyRequest {
             handle,
@@ -207,8 +162,7 @@ impl PolicyModifyRequest {
     pub fn selector_protocol_gre_key(mut self, gre_key: u32) -> Self {
         self.message.user_policy_info.selector.sport = (gre_key >> 16) as u16;
         self.message.user_policy_info.selector.sport_mask = u16::MAX;
-        self.message.user_policy_info.selector.dport =
-            (gre_key & 0xffff) as u16;
+        self.message.user_policy_info.selector.dport = (gre_key & 0xffff) as u16;
         self.message.user_policy_info.selector.dport_mask = u16::MAX;
         self
     }
@@ -221,46 +175,8 @@ impl PolicyModifyRequest {
     // directly. When execute is called, all of the added templates
     // are grouped into one array and passed to the kernel as a
     // single XFRMA_TMPL attribute.
-    pub fn add_template(
-        mut self,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        proto: u8,
-        mode: u8,
-        spi: u32,
-        optional: bool,
-        reqid: u32,
-    ) -> Self {
-        let mut tmpl = UserTemplate::default();
-
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                tmpl.saddr = Address::from_ipv4(&ipv4);
-                tmpl.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                tmpl.saddr = Address::from_ipv6(&ipv6);
-                tmpl.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                tmpl.id.daddr = Address::from_ipv4(&ipv4);
-            }
-            IpAddr::V6(ipv6) => {
-                tmpl.id.daddr = Address::from_ipv6(&ipv6);
-            }
-        }
-
-        tmpl.id.proto = proto;
-        tmpl.mode = mode;
-        tmpl.id.spi = spi;
-        tmpl.optional = if optional { 1 } else { 0 };
-        tmpl.reqid = reqid;
-        tmpl.share = 0;
-
-        self.templates.push(tmpl);
+    pub fn add_template(mut self, template: UserTemplate) -> Self {
+        self.templates.push(template);
         self
     }
 
