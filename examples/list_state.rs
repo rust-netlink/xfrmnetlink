@@ -32,15 +32,10 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn dump_states(
-    handle: Handle,
-    ca: &StateDumpCliArgs,
-) -> Result<(), Error> {
+async fn dump_states(handle: Handle, ca: &StateDumpCliArgs) -> Result<(), Error> {
     let mut req = handle.state().get_dump();
 
-    if !ca.src_addr.addr().is_unspecified()
-        || !ca.dst_addr.addr().is_unspecified()
-    {
+    if !ca.src_addr.addr().is_unspecified() || !ca.dst_addr.addr().is_unspecified() {
         req = req.address_filter(
             ca.src_addr.addr(),
             ca.src_addr.prefix_len(),

@@ -25,10 +25,7 @@ impl Handle {
             .map_err(|_| Error::RequestFailed)
     }
 
-    pub fn notify(
-        &mut self,
-        msg: NetlinkMessage<XfrmMessage>,
-    ) -> Result<(), Error> {
+    pub fn notify(&mut self, msg: NetlinkMessage<XfrmMessage>) -> Result<(), Error> {
         self.0
             .notify(msg, SocketAddr::new(0, 0))
             .map_err(|_| Error::RequestFailed)?;

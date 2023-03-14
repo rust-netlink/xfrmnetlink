@@ -37,5 +37,4 @@ pub const ENC_ALG_SM4_CBC: &str = "cbc(sm4)";
 pub const ENC_AEAD_ALG_AES_GCM: &str = "rfc4106(gcm(aes))";
 pub const ENC_AEAD_ALG_AES_CCM: &str = "rfc4309(ccm(aes))";
 pub const ENC_AEAD_ALG_NULL_AES_GMAC: &str = "rfc4543(gcm(aes))";
-pub const ENC_AEAD_ALG_CHACHA20_POLY1305: &str =
-    "rfc7539esp(chacha20,poly1305)";
+pub const ENC_AEAD_ALG_CHACHA20_POLY1305: &str = "rfc7539esp(chacha20,poly1305)";

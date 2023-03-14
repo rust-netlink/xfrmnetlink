@@ -32,15 +32,11 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn alloc_spi_state(
-    handle: Handle,
-    ca: &StateAllocSpiCliArgs,
-) -> Result<(), Error> {
-    let mut req = handle.state().alloc_spi(
-        ca.src_addr.addr(),
-        ca.dst_addr.addr(),
-        ca.protocol,
-    );
+async fn alloc_spi_state(handle: Handle, ca: &StateAllocSpiCliArgs) -> Result<(), Error> {
+    let mut req = handle
+        .state()
+        .alloc_spi(ca.src_addr.addr(), ca.dst_addr.addr())
+        .protocol(ca.protocol);
 
     if let Some(spi_min) = ca.spi_min {
         if let Some(spi_max) = ca.spi_max {

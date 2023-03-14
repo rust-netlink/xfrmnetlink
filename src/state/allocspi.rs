@@ -10,9 +10,8 @@ use std::net::IpAddr;
 use crate::{try_xfrmnl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    constants::*,
     state::{AllocSpiMessage, ModifyMessage},
-    Address, Mark, XfrmAttrs, XfrmMessage,
+    Mark, XfrmAttrs, XfrmMessage,
 };
 
 /// A request to allocate a SPI for an xfrm state. This is equivalent to the `ip xfrm state allocspi` command.
@@ -23,51 +22,22 @@ pub struct StateAllocSpiRequest {
 }
 
 impl StateAllocSpiRequest {
-    pub(crate) fn new(
-        handle: Handle,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-    ) -> Self {
+    pub(crate) fn new(handle: Handle, src_addr: IpAddr, dst_addr: IpAddr) -> Self {
         let mut message = AllocSpiMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message.spi_info.info.saddr = Address::from_ipv4(&ipv4);
-                message.spi_info.info.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message.spi_info.info.saddr = Address::from_ipv6(&ipv6);
-                message.spi_info.info.family = AF_INET6;
-            }
-        }
-
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.spi_info.info.id.daddr = Address::from_ipv4(&ipv4);
-            }
-            IpAddr::V6(ipv6) => {
-                message.spi_info.info.id.daddr = Address::from_ipv6(&ipv6);
-            }
-        }
-
-        message.spi_info.info.id.proto = protocol;
+        message.spi_info.info.source(&src_addr);
+        message.spi_info.info.destination(&dst_addr);
         message.spi_info.info.id.spi = 0;
-
-        // Set the same default ranges as iproute2 (IPPROTO_COMP spi is 16-bit)
-        message.spi_info.min = 0x100;
-        if protocol == IPPROTO_COMP {
-            message.spi_info.max = 0xffff;
-        } else {
-            message.spi_info.max = 0x0fffffff;
-        }
 
         StateAllocSpiRequest { handle, message }
     }
 
+    pub fn protocol(mut self, protocol: u8) -> Self {
+        self.message.spi_info.protocol(protocol);
+        self
+    }
     pub fn spi_range(mut self, spi_min: u32, spi_max: u32) -> Self {
-        self.message.spi_info.min = spi_min;
-        self.message.spi_info.max = spi_max;
+        self.message.spi_info.spi_range(spi_min, spi_max);
         self
     }
     pub fn mode(mut self, mode: u8) -> Self {
@@ -107,13 +77,10 @@ impl StateAllocSpiRequest {
 
         // A successful alloc spi request returns with an Add/ModifyMessage response.
         match handle.request(req) {
-            Ok(response) => Either::Left(
-                response
-                    .map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddSa))),
-            ),
-            Err(e) => Either::Right(
-                future::err::<ModifyMessage, Error>(e).into_stream(),
-            ),
+            Ok(response) => {
+                Either::Left(response.map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddSa))))
+            }
+            Err(e) => Either::Right(future::err::<ModifyMessage, Error>(e).into_stream()),
         }
     }
 

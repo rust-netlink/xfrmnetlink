@@ -3,9 +3,8 @@
 use std::net::IpAddr;
 
 use super::{
-    PolicyDeleteRequest, PolicyFlushRequest, PolicyGetDefaultRequest,
-    PolicyGetRequest, PolicyGetSpdInfoRequest, PolicyModifyRequest,
-    PolicySetDefaultRequest, PolicySetSpdInfoRequest,
+    PolicyDeleteRequest, PolicyFlushRequest, PolicyGetDefaultRequest, PolicyGetRequest,
+    PolicyGetSpdInfoRequest, PolicyModifyRequest, PolicySetDefaultRequest, PolicySetSpdInfoRequest,
 };
 use crate::Handle;
 
@@ -24,8 +23,6 @@ impl PolicyHandle {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
-        action: u8,
     ) -> PolicyModifyRequest {
         PolicyModifyRequest::new(
             self.0.clone(),
@@ -34,8 +31,6 @@ impl PolicyHandle {
             src_prefix_len,
             dst_addr,
             dst_prefix_len,
-            direction,
-            action,
         )
     }
 
@@ -46,7 +41,6 @@ impl PolicyHandle {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
     ) -> PolicyDeleteRequest {
         PolicyDeleteRequest::new(
             self.0.clone(),
@@ -54,17 +48,12 @@ impl PolicyHandle {
             src_prefix_len,
             dst_addr,
             dst_prefix_len,
-            direction,
         )
     }
 
     /// Delete xfrm policy specifying the index (equivalent to `ip xfrm policy delete index`)
-    pub fn delete_index(
-        &self,
-        index: u32,
-        direction: u8,
-    ) -> PolicyDeleteRequest {
-        PolicyDeleteRequest::new_index(self.0.clone(), index, direction)
+    pub fn delete_index(&self, index: u32) -> PolicyDeleteRequest {
+        PolicyDeleteRequest::new_index(self.0.clone(), index)
     }
 
     /// Flush xfrm policies (equivalent to `ip xfrm policy flush`)
@@ -79,7 +68,6 @@ impl PolicyHandle {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
     ) -> PolicyGetRequest {
         PolicyGetRequest::new(
             self.0.clone(),
@@ -87,7 +75,6 @@ impl PolicyHandle {
             src_prefix_len,
             dst_addr,
             dst_prefix_len,
-            direction,
         )
     }
 
@@ -102,8 +89,8 @@ impl PolicyHandle {
     }
 
     /// Get xfrm policy specifying the index (equivalent to `ip xfrm policy get index`)
-    pub fn get_index(&self, index: u32, direction: u8) -> PolicyGetRequest {
-        PolicyGetRequest::new_index(self.0.clone(), index, direction)
+    pub fn get_index(&self, index: u32) -> PolicyGetRequest {
+        PolicyGetRequest::new_index(self.0.clone(), index)
     }
 
     /// Get xfrm spd statistics (equivalent to `ip xfrm policy count`)
@@ -133,8 +120,6 @@ impl PolicyHandle {
         src_prefix_len: u8,
         dst_addr: IpAddr,
         dst_prefix_len: u8,
-        direction: u8,
-        action: u8,
     ) -> PolicyModifyRequest {
         PolicyModifyRequest::new(
             self.0.clone(),
@@ -143,8 +128,6 @@ impl PolicyHandle {
             src_prefix_len,
             dst_addr,
             dst_prefix_len,
-            direction,
-            action,
         )
     }
 }

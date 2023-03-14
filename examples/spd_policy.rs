@@ -28,10 +28,7 @@ async fn main() -> Result<(), ()> {
     Ok(())
 }
 
-async fn set_spd_thresholds(
-    handle: Handle,
-    ca: &PolicySpdCliArgs,
-) -> Result<(), Error> {
+async fn set_spd_thresholds(handle: Handle, ca: &PolicySpdCliArgs) -> Result<(), Error> {
     let mut req = handle.policy().set_spdinfo();
 
     if let Some((lbits, rbits)) = ca.hthresh4 {

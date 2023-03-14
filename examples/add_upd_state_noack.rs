@@ -76,36 +76,26 @@ fn add_upd_state(handle: Handle, ca: &StateAddUpdCliArgs) -> Result<(), Error> {
     // coaddr can be updated. Possibly selector (if not using spi, so not
     // relevant for IPsec).
     let mut req = if ca.update {
-        handle.state().update(
-            ca.src_addr.addr(),
-            ca.dst_addr.addr(),
-            ca.xfrm_proto,
-            ca.spi,
-        )
+        handle
+            .state()
+            .update(ca.src_addr.addr(), ca.dst_addr.addr())
+            .protocol(ca.xfrm_proto)
+            .spi(ca.spi)
     } else {
-        handle.state().add(
-            ca.src_addr.addr(),
-            ca.dst_addr.addr(),
-            ca.xfrm_proto,
-            ca.spi,
-        )
+        handle
+            .state()
+            .add(ca.src_addr.addr(), ca.dst_addr.addr())
+            .protocol(ca.xfrm_proto)
+            .spi(ca.spi)
     };
 
     if ca.enc_alg_name.is_some() {
         if ca.enc_alg_key.len() > 0 {
-            req = req.encryption(
-                ca.enc_alg_name.as_ref().unwrap(),
-                &ca.enc_alg_key,
-            )?;
+            req = req.encryption(ca.enc_alg_name.as_ref().unwrap(), &ca.enc_alg_key)?;
         }
         if ca.auth_alg_name.is_some() && ca.auth_alg_key.len() > 0 {
-            req = req.authentication(
-                ca.auth_alg_name.as_ref().unwrap(),
-                &ca.auth_alg_key,
-            )?;
-        } else if ca.auth_trunc_alg_name.is_some()
-            && ca.auth_trunc_alg_key.len() > 0
-        {
+            req = req.authentication(ca.auth_alg_name.as_ref().unwrap(), &ca.auth_alg_key)?;
+        } else if ca.auth_trunc_alg_name.is_some() && ca.auth_trunc_alg_key.len() > 0 {
             req = req.authentication_trunc(
                 ca.auth_trunc_alg_name.as_ref().unwrap(),
                 &ca.auth_trunc_alg_key,
@@ -198,10 +188,7 @@ fn add_upd_state(handle: Handle, ca: &StateAddUpdCliArgs) -> Result<(), Error> {
     }
 
     if let Some(encap_proto) = ca.encap_type {
-        if ca.encap_sport.is_some()
-            && ca.encap_dport.is_some()
-            && ca.encap_oa.is_some()
-        {
+        if ca.encap_sport.is_some() && ca.encap_dport.is_some() && ca.encap_oa.is_some() {
             req = req.encapsulation(
                 encap_proto,
                 ca.encap_sport.unwrap(),

@@ -4,9 +4,7 @@ use futures::stream::StreamExt;
 
 use crate::{try_nl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
-use netlink_packet_xfrm::{
-    policy::FlushMessage, UserPolicyType, XfrmAttrs, XfrmMessage,
-};
+use netlink_packet_xfrm::{policy::FlushMessage, UserPolicyType, XfrmAttrs, XfrmMessage};
 
 /// A request to flush xfrm policies. This is equivalent to the `ip xfrm policy flush` command.
 #[non_exhaustive]

@@ -28,10 +28,7 @@ async fn main() -> Result<(), ()> {
     Ok(())
 }
 
-async fn flush_policies(
-    handle: Handle,
-    ca: &PolicyFlushCliArgs,
-) -> Result<(), Error> {
+async fn flush_policies(handle: Handle, ca: &PolicyFlushCliArgs) -> Result<(), Error> {
     let mut req = handle.policy().flush();
 
     if let Some(pt) = ca.ptype {

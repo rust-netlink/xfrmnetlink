@@ -5,9 +5,7 @@ use std::net::IpAddr;
 
 use crate::{try_nl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
-use netlink_packet_xfrm::{
-    constants::*, state::DelGetMessage, Address, Mark, XfrmAttrs, XfrmMessage,
-};
+use netlink_packet_xfrm::{state::DelGetMessage, Address, Mark, XfrmAttrs, XfrmMessage};
 
 /// A request to delete xfrm state. This is equivalent to the `ip xfrm state delete` command.
 #[non_exhaustive]
@@ -17,43 +15,25 @@ pub struct StateDeleteRequest {
 }
 
 impl StateDeleteRequest {
-    pub(crate) fn new(
-        handle: Handle,
-        src_addr: IpAddr,
-        dst_addr: IpAddr,
-        protocol: u8,
-        spi: u32,
-    ) -> Self {
+    pub(crate) fn new(handle: Handle, src_addr: IpAddr, dst_addr: IpAddr) -> Self {
         let mut message = DelGetMessage::default();
 
-        match src_addr {
-            IpAddr::V4(ipv4) => {
-                message
-                    .nlas
-                    .push(XfrmAttrs::SrcAddr(Address::from_ipv4(&ipv4)));
-                message.user_sa_id.family = AF_INET;
-            }
-            IpAddr::V6(ipv6) => {
-                message
-                    .nlas
-                    .push(XfrmAttrs::SrcAddr(Address::from_ipv6(&ipv6)));
-                message.user_sa_id.family = AF_INET6;
-            }
-        }
+        message
+            .nlas
+            .push(XfrmAttrs::SrcAddr(Address::from_ip(&src_addr)));
 
-        match dst_addr {
-            IpAddr::V4(ipv4) => {
-                message.user_sa_id.daddr = Address::from_ipv4(&ipv4);
-            }
-            IpAddr::V6(ipv6) => {
-                message.user_sa_id.daddr = Address::from_ipv6(&ipv6);
-            }
-        }
-
-        message.user_sa_id.proto = protocol;
-        message.user_sa_id.spi = spi;
+        message.user_sa_id.destination(&dst_addr);
 
         StateDeleteRequest { handle, message }
+    }
+
+    pub fn protocol(mut self, protocol: u8) -> Self {
+        self.message.user_sa_id.proto = protocol;
+        self
+    }
+    pub fn spi(mut self, spi: u32) -> Self {
+        self.message.user_sa_id.spi = spi;
+        self
     }
 
     // Delete and Get won't work to find/retrieve the state in the kernel

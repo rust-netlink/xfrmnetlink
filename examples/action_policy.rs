@@ -29,9 +29,7 @@ async fn main() -> Result<(), Error> {
     tokio::spawn(connection);
 
     if cli_args.set_action {
-        if let Err(e) =
-            set_default_policy_action(handle.clone(), &cli_args).await
-        {
+        if let Err(e) = set_default_policy_action(handle.clone(), &cli_args).await {
             eprintln!("{}", e);
         }
     } else {
@@ -48,10 +46,7 @@ async fn get_default_policy_action(handle: Handle) -> Result<(), Error> {
     Ok(())
 }
 
-async fn set_default_policy_action(
-    handle: Handle,
-    ca: &PolicyActionCliArgs,
-) -> Result<(), Error> {
+async fn set_default_policy_action(handle: Handle, ca: &PolicyActionCliArgs) -> Result<(), Error> {
     let in_act = ca.in_action.unwrap_or(XFRM_USERPOLICY_UNSPEC);
     let fwd_act = ca.fwd_action.unwrap_or(XFRM_USERPOLICY_UNSPEC);
     let out_act = ca.out_action.unwrap_or(XFRM_USERPOLICY_UNSPEC);

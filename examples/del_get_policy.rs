@@ -41,20 +41,22 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn get_policy(
-    handle: Handle,
-    ca: &PolicyDelGetCliArgs,
-) -> Result<(), Error> {
+async fn get_policy(handle: Handle, ca: &PolicyDelGetCliArgs) -> Result<(), Error> {
     let mut req = if ca.index.is_some() {
-        handle.policy().get_index(ca.index.unwrap(), ca.direction)
+        handle
+            .policy()
+            .get_index(ca.index.unwrap())
+            .direction(ca.direction)
     } else {
-        handle.policy().get(
-            ca.src_addr.addr(),
-            ca.src_addr.prefix_len(),
-            ca.dst_addr.addr(),
-            ca.dst_addr.prefix_len(),
-            ca.direction,
-        )
+        handle
+            .policy()
+            .get(
+                ca.src_addr.addr(),
+                ca.src_addr.prefix_len(),
+                ca.dst_addr.addr(),
+                ca.dst_addr.prefix_len(),
+            )
+            .direction(ca.direction)
     };
 
     if let Some(pt) = ca.ptype {
@@ -106,22 +108,22 @@ async fn get_policy(
     Ok(())
 }
 
-async fn del_policy(
-    handle: Handle,
-    ca: &PolicyDelGetCliArgs,
-) -> Result<(), Error> {
+async fn del_policy(handle: Handle, ca: &PolicyDelGetCliArgs) -> Result<(), Error> {
     let mut req = if ca.index.is_some() {
         handle
             .policy()
-            .delete_index(ca.index.unwrap(), ca.direction)
+            .delete_index(ca.index.unwrap())
+            .direction(ca.direction)
     } else {
-        handle.policy().delete(
-            ca.src_addr.addr(),
-            ca.src_addr.prefix_len(),
-            ca.dst_addr.addr(),
-            ca.dst_addr.prefix_len(),
-            ca.direction,
-        )
+        handle
+            .policy()
+            .delete(
+                ca.src_addr.addr(),
+                ca.src_addr.prefix_len(),
+                ca.dst_addr.addr(),
+                ca.dst_addr.prefix_len(),
+            )
+            .direction(ca.direction)
     };
 
     if let Some(pt) = ca.ptype {
