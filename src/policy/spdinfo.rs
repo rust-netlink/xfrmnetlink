@@ -5,8 +5,8 @@ use futures::stream::StreamExt;
 use crate::{try_nl, try_xfrmnl, Error, Handle};
 use netlink_packet_core::{NetlinkMessage, NLM_F_ACK, NLM_F_REQUEST};
 use netlink_packet_xfrm::{
-    policy::{GetSpdInfoMessage, NewSpdInfoMessage},
-    SpdHThresh, SpdInfoAttrs, XfrmMessage,
+    policy::{GetSpdInfoMessage, NewSpdInfoMessage, SpdHThresh, SpdInfoAttrs},
+    XfrmMessage,
 };
 
 /// A request to get xfrm policy statistics. This is equivalent to the `ip xfrm policy count` command.
