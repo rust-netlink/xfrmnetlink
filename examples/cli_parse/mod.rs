@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 use std::iter::Peekable;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::str::FromStr;
