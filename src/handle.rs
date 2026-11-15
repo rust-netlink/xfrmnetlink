@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-use futures::Stream;
+use futures::{Stream, StreamExt};
 
 use crate::{Error, PolicyHandle, StateHandle};
 use netlink_packet_core::NetlinkMessage;
@@ -19,10 +19,12 @@ impl Handle {
     pub fn request(
         &mut self,
         message: NetlinkMessage<XfrmMessage>,
-    ) -> Result<impl Stream<Item = NetlinkMessage<XfrmMessage>>, Error> {
-        self.0
+    ) -> Result<impl Stream<Item = Result<NetlinkMessage<XfrmMessage>, Error>>, Error> {
+        let stream = self
+            .0
             .request(message, SocketAddr::new(0, 0))
-            .map_err(|_| Error::RequestFailed)
+            .map_err(|_| Error::RequestFailed)?;
+        Ok(stream.map(|result| result.map_err(|err| Error::NetlinkProtoError(err.to_string()))))
     }
 
     pub fn notify(&mut self, msg: NetlinkMessage<XfrmMessage>) -> Result<(), Error> {

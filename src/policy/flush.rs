@@ -45,7 +45,7 @@ impl PolicyFlushRequest {
 
         let mut response = handle.request(req)?;
         while let Some(message) = response.next().await {
-            try_nl!(message);
+            try_nl!(message?);
         }
         Ok(())
     }

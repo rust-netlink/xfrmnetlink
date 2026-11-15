@@ -18,6 +18,9 @@ pub enum Error {
     #[error("A netlink request failed")]
     RequestFailed,
 
+    #[error("A netlink protocol error occurred: {0}")]
+    NetlinkProtoError(String),
+
     #[error("Failed to parse an IP address: {0:?}")]
     InvalidIp(Vec<u8>),
 

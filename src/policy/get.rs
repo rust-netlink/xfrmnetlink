@@ -171,7 +171,7 @@ impl PolicyGetRequest {
         // A successful policy Get request returns with an Add/ModifyMessage response.
         match handle.request(req) {
             Ok(response) => {
-                Either::Left(response.map(move |msg| Ok(try_xfrmnl!(msg, XfrmMessage::AddPolicy))))
+                Either::Left(response.map(move |msg| Ok(try_xfrmnl!(msg?, XfrmMessage::AddPolicy))))
             }
             Err(e) => Either::Right(future::err::<ModifyMessage, Error>(e).into_stream()),
         }

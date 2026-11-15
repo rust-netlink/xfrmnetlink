@@ -37,7 +37,7 @@ impl StateGetSadInfoRequest {
         let mut response = handle.request(req)?;
 
         if let Some(msg) = response.next().await {
-            return Ok(try_xfrmnl!(msg, XfrmMessage::NewSadInfo));
+            return Ok(try_xfrmnl!(msg?, XfrmMessage::NewSadInfo));
         }
         Err(Error::RequestFailed)
     }

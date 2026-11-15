@@ -29,15 +29,15 @@ async fn main() -> Result<(), Error> {
     //println!("{:?}", cli_args);
 
     // Two connections, one for sending the request, one for receiving the async response.
-    let (mut connection_1, _, mut messages) = new_connection().unwrap();
+    let (connection_1, _, mut messages) = new_connection().unwrap();
     let (connection_2, handle, _) = new_connection().unwrap();
 
     let xfrmgrp_flags: u32 = u32::MAX;
     let addr = SocketAddr::new(0, xfrmgrp_flags);
 
     connection_1
-        .socket_mut()
-        .socket_mut()
+        .socket_ref()
+        .socket_ref()
         .bind(&addr)
         .expect("failed to bind");
 
