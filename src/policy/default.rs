@@ -33,7 +33,7 @@ impl PolicyGetDefaultRequest {
         let mut response = handle.request(req)?;
 
         if let Some(msg) = response.next().await {
-            return Ok(try_xfrmnl!(msg, XfrmMessage::GetPolicyDefault));
+            return Ok(try_xfrmnl!(msg?, XfrmMessage::GetPolicyDefault));
         }
         Err(Error::RequestFailed)
     }
@@ -75,7 +75,7 @@ impl PolicySetDefaultRequest {
         let mut response = handle.request(req)?;
 
         while let Some(msg) = response.next().await {
-            try_nl!(msg);
+            try_nl!(msg?);
         }
         Ok(())
     }

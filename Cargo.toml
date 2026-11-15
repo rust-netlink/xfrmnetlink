@@ -18,10 +18,11 @@ smol_socket = ["netlink-proto/smol_socket", "async-global-executor"]
 
 [dependencies]
 futures = "0.3.11"
+libc = "0.2"
 thiserror = "1"
-netlink-packet-core = { version = "0.9" }
-netlink-packet-xfrm = { version = "0.5" }
-netlink-proto = { default-features = false, version = "0.14.1" }
+netlink-packet-core = { version = "1.0.0-rc2" }
+netlink-packet-xfrm = { git = "https://github.com/rust-netlink/netlink-packet-xfrm" }
+netlink-proto = { default-features = false, version = "1.0.0-rc2" }
 tokio = { version = "1.0.1", features = ["rt"], optional = true }
 async-global-executor = { version = "2.0.2", optional = true }
 

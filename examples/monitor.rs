@@ -10,7 +10,7 @@ use xfrmnetlink::new_connection;
 #[tokio::main]
 async fn main() -> Result<(), String> {
     // Open the netlink socket
-    let (mut connection, _, mut messages) = new_connection().map_err(|e| format!("{}", e))?;
+    let (connection, _, mut messages) = new_connection().map_err(|e| format!("{}", e))?;
 
     // Can specify various XFRMNLGRP_* flags to specify specific messages to listen for.
     let xfrmgrp_flags: u32 = u32::MAX;
@@ -20,12 +20,12 @@ async fn main() -> Result<(), String> {
 
     // Said address is bound so new conenctions and thus new message broadcasts can be received.
     connection
-        .socket_mut()
-        .socket_mut()
+        .socket_ref()
+        .socket_ref()
         .bind(&addr)
         .expect("failed to bind");
 
-    //connection.socket_mut().socket_mut().set_listen_all_namespaces(true).map_err(|e| format!("{}", e))?;
+    //connection.socket_ref().socket_ref().set_listen_all_namespaces(true).map_err(|e| format!("{}", e))?;
 
     tokio::spawn(connection);
 

@@ -37,7 +37,7 @@ impl PolicyGetSpdInfoRequest {
         let mut response = handle.request(req)?;
 
         if let Some(msg) = response.next().await {
-            return Ok(try_xfrmnl!(msg, XfrmMessage::NewSpdInfo));
+            return Ok(try_xfrmnl!(msg?, XfrmMessage::NewSpdInfo));
         }
         Err(Error::RequestFailed)
     }
@@ -96,7 +96,7 @@ impl PolicySetSpdInfoRequest {
         let mut response = handle.request(req)?;
 
         while let Some(msg) = response.next().await {
-            try_nl!(msg);
+            try_nl!(msg?);
         }
         Ok(())
     }
